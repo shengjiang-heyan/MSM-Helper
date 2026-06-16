@@ -43,17 +43,18 @@ class MSMbot:
         while (time.time()-startTime < timeLimit):
             try:
                 pos = pyautogui.locateOnScreen(imgPath,confidence=confid)
-                print(f"Success find {name}")
+                print(f"识别到：{name}")
                 return pos
             except pyautogui.ImageNotFoundException:
                 pass
-        print(f"Fail find {name}")
+        print(f"未识别到：{name}")
         return None
 
     def closeAd(self):
         pos = self.findImage(self.images["advertisement"],"Close Advertisement",self.conf,0.5)
         if pos:
             pyautogui.click(pos)
+            time.sleep(1)
 
     def toIsland(self,island):
         #打开地图
@@ -96,41 +97,53 @@ class MSMbot:
             return False
 
     def collectCoinFast(self):
-        pos = self.findImage(self.images["coinCollect"],"CoinCollect",self.conf,5)
-        if pos:
-            pyautogui.click(pos)
-            time.sleep(2)
-            pos = self.findImage(self.images["confirm"],"Confirm",self.conf,5)
+        for attempt in range(2):
+            pos = self.findImage(self.images["coinCollect"],"CoinCollect",self.conf,5)
             if pos:
                 pyautogui.click(pos)
+                time.sleep(1)
+                pos = self.findImage(self.images["confirm"],"Confirm",self.conf,5)
+                if pos:
+                    pyautogui.click(pos)
+                    print("完成 一键收集金币")
+                    return True
+                else:
+                    self.closeAd()
+        print("失败 一键收集金币")
+        return False
+
 
     def collectResource(self,imgKey,name,maxTry,postDelay):
         for attempt in range(maxTry):
             pos = self.findImage(self.images[imgKey],name,self.conf,0.5)
             if pos:
                 pyautogui.click(pos)
-                print(f"collect {name} {attempt+1}")
+                print(f"收集 {name}: {attempt+1}")
             elif not pos and attempt > 0:
-                print(f"Success collect {name}")
+                print(f"完成收集 {name}")
                 return True
             else:
-                print(f"No {name}")
+                print(f"没有 {name}")
                 return True
             time.sleep(postDelay)
-        print("Max try limit")
+        print("超出最大尝试限制")
         return False
 
     def run(self):
         time.sleep(3)
         self.closeAd()
         for island in self.islands:
+            print(f"------ 前往岛屿：{island} ------")
             self.toIsland(island)
             time.sleep(2)
-            self.closeAd()
+            print()
+            print(f"------ 收取金币 ------")
             self.collectCoinFast()
             time.sleep(2)
+            print(f"------ 收取钻石 ------")
             self.collectResource("diamondCollect","Diamond",1,0.5)
             time.sleep(1)
+            print(f"------ 收取食物 ------")
             self.collectResource("foodCollect","Food",5,0.5)
             time.sleep(1)
 
