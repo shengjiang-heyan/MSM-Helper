@@ -3,155 +3,140 @@ import sys
 import pyautogui
 import time
 
-logPath = "gameLog.txt"
-sys.stdout = open(logPath,"a",encoding="utf-8")
+class MSMbot:
+    def __init__(self):
+        pyautogui.FAILSAFE = True
+        pyautogui.PAUSE = 0.1
 
-def getPath(path):
-    if hasattr(sys,'_MEIPASS'):
-        return os.path.join(sys._MEIPASS,path)
-    return os.path.join(os.path.abspath("."),path)
+        self.wid,self.hei = pyautogui.size()
+        self.conf = 0.8
 
-pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.1
+        self.islands = [
+            "Plant","Cold","Air","Water","Fire","Shugabush",
+            "Ethereal","Workshop","Haven","Oasis","Mythical",
+            "Light","Psychic","Faerie","Bone","Sanctum",
+            "Wublin","Celestial"
+        ]
 
-advertisementImg = getPath("image/Advertisement.png")
-map1Img = getPath("image/map1.png")
-map2Img = getPath("image/map2.png")
-goImg = getPath("image/Go.png")
-youAreHereImg = getPath("image/YouAreHere.png")
-backImg = getPath("image/Back.png")
-noImg = getPath("image/No.png")
-coinCollectImg = getPath("image/CoinCollect.png")
-confirmImg = getPath("image/Confirm.png")
-diamondCollectImg = getPath("image/DiamondCollect.png")
-foodCollectImg = getPath("image/FoodCollect.png")
+        self.images = {
+            "advertisement" : self.getPath("image/Advertisement.png"),
+            "map" : self.getPath("image/map.png"),
+            "go" : self.getPath("image/Go.png"),
+            "youAreHere" : self.getPath("image/YouAreHere.png"),
+            "back" : self.getPath("image/Back.png"),
+            "no" : self.getPath("image/No.png"),
+            "coinCollect" : self.getPath("image/CoinCollect.png"),
+            "confirm" : self.getPath("image/Confirm.png"),
+            "diamondCollect" : self.getPath("image/DiamondCollect.png"),
+            "foodCollect" : self.getPath("image/FoodCollect.png"),
+            "setting" : self.getPath("image/Setting.png"),
+            "coin" : self.getPath("image/Coin.png")
+        }
 
-wid,hei = pyautogui.size()
+    def getPath(self,path):
+        if hasattr(sys,'_MEIPASS'):
+            return os.path.join(sys._MEIPASS,path)
+        return os.path.join(os.path.abspath("."),path)
 
-conf = 0.8
-longPause = 5
-midPause = 3
+    def findImage(self,imgPath,name,confid,timeLimit):
+        startTime = time.time()
+        while (time.time()-startTime < timeLimit):
+            try:
+                pos = pyautogui.locateOnScreen(imgPath,confidence=confid)
+                print(f"Success find {name}")
+                return pos
+            except pyautogui.ImageNotFoundException:
+                pass
+        print(f"Fail find {name}")
+        return None
 
-time.sleep(3)
-
-islands = ["Plant","Cold","Air","Water","Fire","Shugabush","Ethereal","Workshop","Haven","Oasis","Mythical","Light","Psychic","Faerie","Bone","Sanctum","Wublin","Celestial"]
-
-try:
-    pos = pyautogui.locateOnScreen(advertisementImg,confidence=conf)
-    print(pos)
-    pyautogui.click(pos)
-    print("Close Advertisement")
-except pyautogui.ImageNotFoundException:
-    print("No Advertisement")
-
-time.sleep(midPause)
-
-for island in islands:
-    print("Map")
-    #打开地图
-    try:
-        pos = pyautogui.locateOnScreen(map1Img,confidence=conf)
-        pyautogui.click(pos)
-        print("Success Map")
-    except pyautogui.ImageNotFoundException:
-        try:
-            pos = pyautogui.locateOnScreen(map2Img,confidence=conf)
+    def closeAd(self):
+        pos = self.findImage(self.images["advertisement"],"Close Advertisement",self.conf,0.5)
+        if pos:
             pyautogui.click(pos)
-            print("Success Map")
-        except pyautogui.ImageNotFoundException:
-            print("Fail Map")
 
-    time.sleep(longPause)
-
-    #选岛
-    print(island + "\n")
-    for tryTime in range(5):
-        try:
-            pos = pyautogui.locateOnScreen(getPath("image/island/"+island+".png"),confidence=conf)
+    def toIsland(self,island):
+        #打开地图
+        pos = self.findImage(self.images["map"],"Map",self.conf,5)
+        if pos:
             pyautogui.click(pos)
-            print("Success " + island)
-            break
-        except pyautogui.ImageNotFoundException:
-            pyautogui.moveTo(wid/10,hei/2)
+        pos = self.findImage(self.images["no"],"No",self.conf,20)
+
+        #选岛
+        for _ in range(5):
+            pos = self.findImage(self.getPath("image/island/"+island+".png"),island,self.conf,0.5)
+            if pos:
+                pyautogui.click(pos)
+                break
+            pyautogui.moveTo(self.wid/10,self.hei/2)
             if island == "Plant":
                 pyautogui.scroll(1000)
             else:
-                pyautogui.scroll(50)
-            print(island + "Fail " + str(tryTime))
+                pyautogui.scroll(-200)
 
-    time.sleep(midPause)
+        #前往岛
+        for _ in range(10):
+            pos = self.findImage(self.images["go"],"Go",self.conf,0.5)
+            if pos:
+                pyautogui.click(pos)
+                break
+            pos = self.findImage(self.images["youAreHere"],"YouAreHere",self.conf,0.5)
+            if pos:
+                pos = self.findImage(self.images["back"],"Back",self.conf,5)
+                if pos:
+                    pyautogui.click(pos)
+                    pos = self.findImage(self.images["no"],"No",self.conf,5)
+                    if pos:
+                        pyautogui.click(pos)
+                        break
+        pos = self.findImage(self.images["setting"],"setting",self.conf,20)
+        if pos:
+            return True
+        else:
+            return False
 
-    #前往岛
-    try:
-        pos = pyautogui.locateOnScreen(goImg,confidence=conf)
-        pyautogui.click(pos)
-        print("Success Go")
-    except pyautogui.ImageNotFoundException:
-        print("Fail Go")
-
-    try:
-        pos = pyautogui.locateOnScreen(youAreHereImg,confidence=conf)
-        pos = pyautogui.locateOnScreen(backImg,confidence=conf)
-        pyautogui.click(pos)
-
-        time.sleep(midPause)
-        pos = pyautogui.locateOnScreen(noImg,confidence=conf)
-        pyautogui.click(pos)
-        print("Success YouAreHere")
-    except pyautogui.ImageNotFoundException:
-        print("Fail YouAreHere")
-
-    time.sleep(longPause)
-
-    #关广告
-    try:
-        pos = pyautogui.locateOnScreen(advertisementImg,confidence=conf)
-        print(pos)
-        pyautogui.click(pos)
-        print("Close Advertisement")
-    except pyautogui.ImageNotFoundException:
-        print("No Advertisement")
-
-    time.sleep(midPause)
-
-    #金币
-    print("Coin")
-    try:
-        pos = pyautogui.locateOnScreen(coinCollectImg,confidence=conf)
-        pyautogui.click(pos)
-        time.sleep(2)
-        try:
-            pos = pyautogui.locateOnScreen(confirmImg,confidence=conf)
+    def collectCoinFast(self):
+        pos = self.findImage(self.images["coinCollect"],"CoinCollect",self.conf,5)
+        if pos:
             pyautogui.click(pos)
-            print("Success Coin")
-        except pyautogui.ImageNotFoundException:
-            print("Fail Coin")
-    except pyautogui.ImageNotFoundException:
-        print("Fail Coin")
+            time.sleep(2)
+            pos = self.findImage(self.images["confirm"],"Confirm",self.conf,5)
+            if pos:
+                pyautogui.click(pos)
 
-    time.sleep(longPause)
+    def collectResource(self,imgKey,name,maxTry,postDelay):
+        for attempt in range(maxTry):
+            pos = self.findImage(self.images[imgKey],name,self.conf,0.5)
+            if pos:
+                pyautogui.click(pos)
+                print(f"collect {name} {attempt+1}")
+            elif not pos and attempt > 0:
+                print(f"Success collect {name}")
+                return True
+            else:
+                print(f"No {name}")
+                return True
+            time.sleep(postDelay)
+        print("Max try limit")
+        return False
 
-    #钻石
-    print("Diamond")
-    try:
-        pos = pyautogui.locateOnScreen(diamondCollectImg,confidence=conf)
-        pyautogui.click(pos)
-        print("Success Diamond")
-    except pyautogui.ImageNotFoundException:
-        print("Fail Diamond")
+    def run(self):
+        time.sleep(3)
+        self.closeAd()
+        for island in self.islands:
+            self.toIsland(island)
+            time.sleep(2)
+            self.closeAd()
+            self.collectCoinFast()
+            time.sleep(2)
+            self.collectResource("diamondCollect","Diamond",1,0.5)
+            time.sleep(1)
+            self.collectResource("foodCollect","Food",5,0.5)
+            time.sleep(1)
 
-    time.sleep(midPause)
+if __name__ == "__main__":
+    logPath = "gameLog.txt"
+    sys.stdout = open(logPath,"a",encoding="utf-8")
 
-    #食物
-    print("Food")
-    for i in range(5):
-        try:
-            pos = pyautogui.locateOnScreen(foodCollectImg, confidence=conf)
-            pyautogui.click(pos)
-            print("Success Food")
-        except pyautogui.ImageNotFoundException:
-            print("Fail Food")
-            break
-        time.sleep(midPause)
-
-    time.sleep(midPause)
+    bot = MSMbot()
+    bot.run()
