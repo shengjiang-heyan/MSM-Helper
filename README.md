@@ -6,20 +6,22 @@
 ## 功能
 
 ### 已有功能
+- 可视化操作界面
 - 自动采集大部分岛屿的金币、钻石、食物。
 岛屿包括：
 `
 Plant Island, Cold Island, Air Island, Water Island, Fire Island, Shugabush Island, Ethereal Island, Ethereal Workshop, Fire Haven, Fire Oasis, Mythical Island, Light Island, Psychic Island, Faerie Island, Bone Island, Magical Sanctum, Wublin Island, Celestial Island
 `
+
 剩余的可收集岛屿
 `
 Magical Nexus, Paironormal Carnival, Amber Island
 `
-收集频次过低或收集规则作者尚不明确，因此未写入脚本中。
+收集频次过低或过于特殊，因此未写入日常收集模块中。
 
 ### 将实现的功能
 - 自定义地烘焙食物
-- 可视化界面
+- 培育器刷取
 
 ### 计划中的功能
 - 天体怪兽/wublin怪兽的自动培育、填蛋
