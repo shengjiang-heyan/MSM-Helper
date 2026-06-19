@@ -1,12 +1,17 @@
 import pyautogui
 import time
 import config
+import threading
+
+class ForceStop(Exception):
+    pass
 
 class MSMbot:
-    def __init__(self):
+    def __init__(self,stopEvent:threading.Event):
         pyautogui.FAILSAFE = True
         pyautogui.PAUSE = 0.1
 
+        self.stopEvent = stopEvent
         self.wid,self.hei = pyautogui.size()
         self.conf = 0.8
 
@@ -32,6 +37,12 @@ class MSMbot:
             "coin" : config.getImage("Coin.png")
         }
 
+    def botSleep(self,duration):
+        for _ in range(int(duration * 2)):
+            if self.stopEvent.is_set():
+                raise ForceStop("程序中断运行")
+            time.sleep(0.5)
+
     def findImage(self,imgPath,name,confid,timeLimit):
         startTime = time.time()
         while (time.time()-startTime < timeLimit):
@@ -48,7 +59,6 @@ class MSMbot:
         pos = self.findImage(self.images["advertisement"],"Close Advertisement",self.conf,0.5)
         if pos:
             pyautogui.click(pos)
-            time.sleep(1)
 
     def toIsland(self,island):
         #打开地图
@@ -91,11 +101,11 @@ class MSMbot:
             return False
 
     def collectCoinFast(self):
-        for attempt in range(2):
+        for reTry in range(2):
             pos = self.findImage(self.images["coinCollect"],"CoinCollect",self.conf,5)
             if pos:
                 pyautogui.click(pos)
-                time.sleep(1)
+                self.botSleep(1)
                 pos = self.findImage(self.images["confirm"],"Confirm",self.conf,5)
                 if pos:
                     pyautogui.click(pos)
@@ -103,6 +113,7 @@ class MSMbot:
                     return True
                 else:
                     self.closeAd()
+                    self.botSleep(1)
         print("失败 一键收集金币")
         return False
 
@@ -119,24 +130,26 @@ class MSMbot:
             else:
                 print(f"没有 {name}")
                 return True
-            time.sleep(postDelay)
+            self.botSleep(postDelay)
         print("超出最大尝试限制")
         return False
 
     def run(self):
-        time.sleep(3)
+        self.botSleep(2)
+        pyautogui.moveTo(self.wid/10,self.hei/2)
+        pyautogui.click()
         self.closeAd()
         for island in self.islands:
             print(f"------ 前往岛屿：{island} ------")
             self.toIsland(island)
-            time.sleep(2)
+            self.botSleep(2)
             print()
             print(f"------ 收取金币 ------")
             self.collectCoinFast()
-            time.sleep(2)
+            self.botSleep(2)
             print(f"------ 收取钻石 ------")
             self.collectResource("diamondCollect","Diamond",1,0.5)
-            time.sleep(1)
+            self.botSleep(1)
             print(f"------ 收取食物 ------")
             self.collectResource("foodCollect","Food",5,0.5)
-            time.sleep(1)
+            self.botSleep(1)

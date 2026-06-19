@@ -13,6 +13,9 @@ class AppWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        self.stopEvent = threading.Event()
+        self.botThread = None
+
         self.protocol("WM_DELETE_WINDOW",self.closing)
 
         self.title("MSM Helper: 日常-填蛋-烘培 v0.3.0")
@@ -21,14 +24,15 @@ class AppWindow(ctk.CTk):
         self.label.pack(padx=15,pady=15,fill="both")
 
         self.startBtn = ctk.CTkButton(self,text="开始运行",command=self.startThread)
-        self.startBtn.pack(pady=50)
+        self.stopBtn = ctk.CTkButton(self,text="终止运行",command=self.stopThread,state="disabled")
+        self.startBtn.pack(pady=10)
+        self.stopBtn.pack(pady=20)
 
         self.running = False
 
     def closing(self):
         print("程序关闭中")
         if sys.stdout != sys.__stdout__:
-            print("程序被强行关闭")
             sys.stdout.flush()
             sys.stdout.close()
             sys.stdout = sys.__stdout__
@@ -38,17 +42,31 @@ class AppWindow(ctk.CTk):
     def startThread(self):
         if self.running:
             return
-        self.running = True
         self.startBtn.configure(text="运行中",state="disabled")
+        self.stopBtn.configure(state="normal")
+        self.running = True
 
-        botThread = threading.Thread(target=self.runBot,daemon=True)
-        botThread.start()
+        self.stopEvent.clear()
+        self.botThread = threading.Thread(target=self.runBot,daemon=True)
+        self.botThread.start()
+
+    def stopThread(self):
+        if not self.running:
+            return
+        self.startBtn.configure(text="开始运行",state="normal")
+        self.stopBtn.configure(state="disabled")
+        self.running = False
+
+        self.stopEvent.set()
 
     def runBot(self):
         try:
             print("运行 MSMbot")
-            bot = MSMbot()
+            bot = MSMbot(self.stopEvent)
             bot.run()
         finally:
+            self.startBtn.configure(text="开始运行",state="normal")
+            self.stopBtn.configure(state="disabled")
             self.running = False
+
             print("结束 MSMbot")
