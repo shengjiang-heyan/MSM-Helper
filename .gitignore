@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+gameLog.txt
+
+dist/
+build/
+*.spec
